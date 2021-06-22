@@ -1,0 +1,1178 @@
+---
+title: "Codigo uteis planejamento e pesquisa"
+author: 'Yugo Oyama - Nº USP: 9297784'
+date: "10/16/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Documentation
+
+Codigos que podem ser uteis para analise estatística.
+
+# Latex Stuff
+
+## sob independencia
+
+$$\stackrel{ind}{\sim}$$
+
+
+# General R stuff
+## R Tricks
+### Usando diferentes variáveis (com pequenas mudanças de nome) em loop
+```{r}
+for(i in 1:8){
+  T7_Pmean[i] <- mean(eval(parse(text = paste0("T7",SF36_D3[i],"_P[[7]]"))))
+  T7_Pmin[i] <- min(eval(parse(text = paste0("T7",SF36_D3[i],"_P[[7]]"))))
+  T7_Pmax[i] <- max(eval(parse(text = paste0("T7",SF36_D3[i],"_P[[7]]"))))
+
+  T7_Nmean2[i] <- mean(eval(parse(text = paste0("T7",SF36_D3[i],"_N[[7]]"))))
+
+}
+CLDQ_D2 <- c("SA", "FA", "SS", "AT", "FE", "PR")
+```
+
+## dados
+### Ler tabela txt
+```{r read-data}
+db<- read.table("",header = TRUE)
+db
+```
+
+### Ler xls
+```{r}
+#Carregando banco de dados
+library(readxl)
+db <- read_excel("trigo.xls")
+db <- read_excel("trigo.xls", sheet = "")
+# #Categorizados
+# trigo$Localidade <- as.factor(trigo$Localidade)
+# #Numéricos
+# trigo1 <- trigo[,3:10]
+
+# excel_sheets("Planilha_Chris_Estatística_20210428.xlsx")
+```
+
+### wide to long
+```{r wide-long}
+#mudar os dados do formato wide para o long
+y.long <- stack(data.frame(y.wide), select=(1:4))
+y.long
+```
+
+
+### wide to long 2
+```{r}
+library(data.table)
+X <- data.frame(c(1:5), c(11:15), c(21:25))
+colnames(X) <- c("ID", "Q1","Q2")
+Y <- melt(setDT(X), id.vars = c("ID"), variable.name = "questao")
+```
+
+### Verify duplicate
+```{r}
+any(duplicated(Controle_SA$ID))
+```
+
+
+### Replace string character
+```{r}
+gsub("\n", " ", db)
+```
+
+### Print unica linha
+```{r}
+cat(sprintf("Influenciado (A_n) é %s \n", A_n))
+```
+
+### Acrescimo obs
+```{r acrescimo-obs}
+dados.extra <- rbind(dados,c(90,90,1)) #acrescimo de 1 observação
+```
+
+
+### Write xlsx
+```{r}
+library(openxlsx) # escrever arquivo exel
+write.xlsx(list_of_datasets, file = "Scores_Consolidadas.xlsx")
+```
+
+## graficos
+
+### Correlação
+```{r}
+ggcorr(carros1, label=T)
+```
+
+
+### lines
+```{r}
+
+i       <- 1
+j       <- 1
+k       <- 1
+
+#plota grafico
+plot(y = sobrevivencia_weibull(x,rhos[1],lambdas[1]), x = x, main = "Função de Sobrevivência",
+     ylab = "Taxa de falha", xlab = "Tempo", type ="l", ylim = c(0,1))
+# plota todas as linhas
+for (i in rhos) {
+  for (j in lambdas) {
+    lines(x,sobrevivencia_weibull(x,i,j), col = cores[k])
+    legenda2[k] <- paste("rho = ",i,"lambda = ",j)
+    k <- k+1
+  }
+}
+```
+
+
+### legenda
+```{r}
+legenda2 <- paste("rho = ",rhos[1])
+```
+
+### legenda
+
+```{r}
+legend("topleft",inset = 0, legend = legenda, col = cores, lty=1,cex=0.8,box.lty=0,bg="transparent")
+```
+
+
+### plotar layout
+```{r}
+par(mfrow=c(1,2))
+```
+
+
+### Gráfico de médias (se) para os Tratamentos  
+
+```{r}
+library(ggplot2)
+me<-tapply(y,Trat,mean)
+sd<-tapply(y,Trat,sd)
+dms<-data.frame(cbind(c("A","B","C"),me,sd))
+dms$me<-as.numeric(me)
+dms$sd<-as.numeric(sd)
+str(dms)
+ggplot(dms, aes(x=V1, y=me)) + 
+  geom_errorbar(aes(ymin=me-sd/sqrt(6), ymax=me+sd/sqrt(6)), width=.1) +
+  geom_point() + 
+  ggtitle("Gráfico de médias (se) para os Tratamentos") +
+  labs(y="médias", x = "Tratamentos")
+
+```
+
+
+### Boxplot
+```{r}
+library(robustbase)
+library(RColorBrewer) #baixar paleta de cores
+cores <- brewer.pal(8, "Set1")
+par(mfrow=c(2,2))
+adjbox(split(TSim,Grup), col=cores, main = "TSim")
+# adjbox(split(O3,wind), col=cores, main = "Wind", xlab = "", ylab="")
+```
+
+### Gráfico de dispersão
+```{r}
+par(mfrow=c(2,2))
+plot(vvento,cpue,pch = 15, main = "Gráfico de dispersão entre vvento e cpue")
+lines(smooth.spline(vvento, cpue, df = 3), col = "blue")
+```
+
+
+
+### Gráfico de perfis para cada var explicativa
+
+```{r}
+library(ggplot2)
+library(profileR)
+db2 <- db1[c("gsp","yr")]
+profileplot(db2,person.id = state, by.pattern = TRUE, original.names = TRUE, standardize = FALSE)
+```
+
+### Interação Grafico de Perfis (de interacao)
+
+```{r Gráfico-de-perfis}
+#Modelagem supondo DCA Fatorial 2x2
+#Gráfico: Perfis de Médias de acordo com os 2 fatores
+with(dat, interaction.plot(factor(f1),factor(f2),y,main="Gráfico de interação")) #var explicativa, id, resp
+```
+
+### Densidade
+
+```{r}
+plot(density(gsp))
+```
+
+## Images
+```{r pressure, echo=FALSE, fig.cap="A caption", out.width = '100%'}
+knitr::include_graphics("D:/Yugo/Academico/IME/2020-2/MAE0327 - Planejamento e Pesquisa II/Listas/P1/R/images/test.png")
+```
+
+### Outro método
+\center
+\includegraphics[width=320pt]{img.png}
+\justify
+
+# Tabelas
+## Tabela genérica
+```{r}
+stargazer::stargazer(cbind(Mod,AICs,BICs,EQMs), type="text", digits = 1)
+```
+
+## Tabela de ANOVA
+
+### Tabela de Anova para 1 efeito aleatorio (estruturalmente igual a 1 efeito fixo)
+\begin{center}
+\begin{tabular}{ |c|c|c|c|c| } 
+\hline
+Fonte de Variação & Soma de quadrados & Graus de liberdade & Quadrado Médio & $F_0$ \\
+\hline
+A (Entre)                 & $SS_A$ & $a-1$ & $MS_A= \frac{SS_A}{a-1} $   &$F_0=\frac{MS_A}{MS_E}$\\ 
+Erro (Residuo) (Dentro)   & $SS_E$ & $n-a$ & $MS_A= \frac{SS_E}{(n-a)} $ &\\
+\hline
+Total                     & $SS_T$ & $n-1$ &                             &\\
+\hline
+\end{tabular}
+\end{center}
+
+#### Hipotese para fator aleatorio
+$H_0: \sigma_a=0$
+$H_1: \sigma_a^2 > 0 $
+
+
+### Tabela de Anova Fatorial 1 fator
+\begin{center}
+\begin{tabular}{ |c|c|c|c|c|c| } 
+\hline
+Fonte de Variação & Soma de quadrados & Graus de liberdade & Quadrado Médio & $F_0$ &p-valor \\
+\hline
+A & $SS_A$ & $a-1$ & $MS_A= \frac{SS_A}{a-1} $ &$F_0=\frac{MS_A}{MS_E}$ \\ 
+Erro & $SS_E$ & $a(n-1)$ &  $MS_E= \frac{SS_E}{A(n-1)}$ &\\
+\hline
+Total & $SS_T$ &an-1 & &\\
+\hline
+\end{tabular}
+\end{center}
+
+#### Hipotese para fator fixo
+$H_0: \mu_j=\mu$
+$H_1: \mu_j \neq \mu$, para pelo menos um j
+
+
+### Tabela de Anova Fatorial 2 fatores com interacao
+\begin{center}
+\begin{tabular}{ |c|c|c|c|c| } 
+\hline
+Fonte de Variação & Soma de quadrados & Graus de liberdade & Quadrado Médio & $F_0$ \\
+\hline
+A             & $SS_A$    & a-1 &       $MS_A= \frac{SS_A}{a-1} $ &$F_0=\frac{MS_A}{MS_E}$\\ 
+B             & $SS_B$    & b-1 &       $MS_B= \frac{SS_B}{b-1} $&$F_0=\frac{MS_B}{MS_E}$\\ 
+Interação AB  & $SS_{AB}$ & (a-1)(b-1)& $MS_{AB}= \frac{SS_{AB}}{(a-1)(B-1)} $ &$F_0=\frac{MS_{AB}}{MS_E}$\\ 
+Erro & $SS_E$ & $ab(n-1)$ & $MS_A= \frac{SS_E}{AB(n-1)} $ &\\
+\hline
+Total & $SS_T$ &abn-1 & &\\
+\hline
+\end{tabular}
+\end{center}
+
+
+
+
+### Tabela de Anova Modelo com Medidas Repetidas
+\begin{center}
+\begin{tabular}{ |c|c|c|c|c|c| } 
+\hline
+Fonte de Variação & Soma de quadrados & Graus de liberdade & Quadrado Médio & $F_0$ &p-valor \\
+\hline
+sujeito   & $SS_S$ & $r-1$ & $MS_S= \sigma_e^2 + a\sigma_\rho^2             $ &$\frac{MS_S}{MS_E}$ \\ 
+A         & $SS_A$ & $a-1$ & $MS_A= \sigma_e^2+r \frac{\sum \tau_j^2}{a-1}  $ &$\frac{A}{MS_E}   $ \\ 
+Erro      & $SS_E$ & $(a-1)(n-1)$ &  $MS_E= \sigma_e^2$ &\\
+\hline
+Total     & $SS_T$ &ra-1 & &\\
+\hline
+\end{tabular}
+\end{center}
+
+### Tabela de Anova Modelo (FV e gl) QL - BH e BV repetidos
+\begin{center}
+\begin{tabular}{ |c|c| } 
+\hline
+Fonte de Variação & Graus de liberdade  \\
+\hline
+trat    & $r-1$ \\
+bh      & $r-1$ \\ 
+bv      & $r-1$  \\ 
+Q       & $m-1$  \\ 
+Erro    & $(mg + m - 3)(g - 1)$ \\
+\hline
+Total   & $N-1$ \\
+\hline
+\end{tabular}
+\end{center}
+
+### Tabela de Anova Modelo (FV e gl) QL - BH repetido
+\begin{center}
+\begin{tabular}{ |c|c| } 
+\hline
+Fonte de Variação & Graus de liberdade  \\
+\hline
+trat    & $r-1$ \\
+bh      & $r-1$ \\ 
+bv      & $m(r-1)$  \\ 
+Q       & $m-1$  \\ 
+Erro    & $(mg -2)(g - 1)$ \\
+\hline
+Total   & $N-1$ \\
+\hline
+\end{tabular}
+\end{center}
+
+### Tabela de Anova Modelo (FV e gl) QL - BV repetido
+\begin{center}
+\begin{tabular}{ |c|c| } 
+\hline
+Fonte de Variação & Graus de liberdade  \\
+\hline
+trat    & $r-1$ \\
+bv      & $r-1$ \\ 
+bh      & $m(r-1)$  \\ 
+Q       & $m-1$  \\ 
+Erro    & $(mg -2)(g - 1)$ \\
+\hline
+Total   & $N-1$ \\
+\hline
+\end{tabular}
+\end{center}
+
+### Tabela de Anova Modelo (FV e gl) QL - sem repeticao
+\begin{center}
+\begin{tabular}{ |c|c| } 
+\hline
+Fonte de Variação & Graus de liberdade  \\
+\hline
+trat    & $r-1$ \\
+bv      & $m(r-1)$ \\ 
+bh      & $m(r-1)$  \\ 
+Q       & $m-1$  \\ 
+Erro    & $(mg -m - 1)(g - 1)$ \\
+\hline
+Total   & $N-1$ \\
+\hline
+\end{tabular}
+\end{center}
+
+
+# Analise de sobrevivencia
+```{r bd, echo = TRUE}
+t     <- c(5, 17, 20, 24, 32, 35, 40, 46, 47, 50, 59, 74)
+delta <- c(1,1,0,1,1,0,1,1,1,1,1,0)
+db0    <- data.frame(yi=t,delta)
+db1    <- data.frame(t,delta)
+db0
+```
+
+```{r}
+resp1 <- Surv(time=db1$t, event=db1$delta, type='right')
+model1 <- survfit(resp1~1, data=db1,conf.type = "plain")
+print(model1, print.rmean=TRUE)
+# summary(model1)
+
+```
+
+## tabela 1
+```{r}
+tabela1 <- data.frame(tempo_j = model1$time,nj = model1$n.risk, dj=model1$n.event,St=round(model1$surv,3))
+tabela1 <- tabela1 %>%filter(dj==1)
+tabela1 <- cbind(j=c(1:length(tabela1[,1])),tabela1)
+tabela1
+```
+
+## Gráfico Kaplan-Meier
+
+```{r}
+instantes<- seq(0,70,20)
+em_risco<- rep(-7, length(instantes))
+for(i in 1:length(instantes)){
+  em_risco[i]<-max(model1$n.risk[model1$time>=instantes[i]])
+}
+
+plot(model1, xlab = "Tempo em dias", ylab="Sobrevivência",
+     main="Estimador de Kaplan-Meier", lwd=2, xlim=c(0,80), conf.type = "plain")
+mtext(c("Em risco",em_risco), at=c(-7,instantes), line=2, side=1,cex=0.9, col="gray3")
+
+```
+
+
+## tabela 2 com intervalo de confianca 
+
+```{r}
+tabela2 <- data.frame(tempo_j = model1$time,nj = model1$n.risk, dj=model1$n.event,St=round(model1$surv,3), IC_U_inf = round(model1$lower,3),IC_U_sup = round(model1$upper,3))
+tabela2 <- tabela2 %>%filter(dj==1)
+tabela2 <- cbind(j=c(1:length(tabela2[,1])),tabela2)
+tabela2
+
+```
+
+## tabela 3 com intervalo de confiança log log
+
+```{r}
+model2 <- survfit(resp1~1, data=db1,conf.type = "log-log")
+print(model2, print.rmean=TRUE)
+summary(model2)
+
+```
+
+```{r}
+tabela3 <- data.frame(tempo_j = model2$time,nj = model2$n.risk, dj=model2$n.event,St=round(model2$surv,3), IC_U_inf = round(model2$lower,3),IC_U_sup = round(model2$upper,3))
+tabela3 <- tabela3 %>%filter(dj==1)
+tabela3 <- cbind(j=c(1:length(tabela3[,1])),tabela3)
+tabela3
+```
+
+
+
+
+# Planejamento e pesquisa
+### Criar dados Quadrado latino e DBAC
+Neste caso QL 3x3, pois r=3
+```{r}
+#inserir dados no sentido vertical e da esquerda para direita
+resp<-c(12,9,7,14,12,18,3,15,6) 
+# para confirmar que inseriu certo, rode o seguinte comando e compare com a tabela original
+# matrix(resp,6,3)
+
+# inserir tratamentos (A,B,C,...) na mesma ordem
+trat<-c(1,2,3,2,3,1,3,1,2)      
+
+#inserir bloco vertical. Repete número r vezes considerando dados (r x c)
+bv<-c(1,1,1,2,2,2,3,3,3)        
+# bv2<-rep(c(1,2,3),each=3)
+
+# inserir bloco horizontal. Repete sequencia c vezes
+bh<-c(1,2,3,1,2,3,1,2,3)        
+# bh2<-rep(c(1,2,3),3)
+
+# Cada linha é um bloco para o delineamento DBAC
+bloc<-c(1:9)      
+dat<-data.frame(cbind(bv,bh,trat,resp,bloc))
+dat
+```
+
+## medias
+```{r}
+# Calculo de medias dos tratamentos
+round(tapply(y,trat,mean),3)
+# 14+13 = ao resultaado 2...
+
+# Medias dos fatores
+round(tapply(y,f1,mean),3)
+round(tapply(y,f2,mean),3)
+
+mfa <- tapply(y,fa,mean)
+mfa  #essas médias são valores do fator aletório fa
+mean(mfa) #estimativa de mi, a média mi de y
+sd(mfa)/sqrt(J) #desvio padrão de mi
+
+# Desvio padrão dos fatores
+sfa <- tapply(y,fa,sd)
+sfa
+```
+
+## inserir dado basaeado na media e dp linha coluna
+```{r}
+
+set.seed(9297784)
+
+# linha
+ll <- c(6,23)
+me_l <-mean(ll)
+sd_l <-sd(ll)
+
+# coluna
+cc <- c(20,31)
+me_c <-mean(cc)
+sd_c <-sd(cc)
+
+# Media entre linha e coluna
+me_ <- c(me_l,me_c)
+sd_ <- c(sd_l,sd_c)
+
+me <- mean(me_)
+sd <- mean(sd_)
+```
+
+
+```{r}
+a <- c()
+a[1] <-round(rnorm(1,me,sd),0)
+a
+```
+
+## Ver sem celulas duplicadas
+```{r}
+db[!duplicated(state),]
+```
+
+### Ver semm celulas duplicadas e com numeracao
+```{r}
+View(as.data.frame(db[!duplicated(state),],c(1:48)))  # de 1 a 48 . Criterio estado. 
+```
+
+
+## Modelos
+
+
+### Modelo de Médias
+$$y_{ij}= \mu_i + e_{ij}$$
+$y_{ij}$: observação ij  
+$\mu_i$: média do tratamento i  
+$e_{ij}$: erro aleatório  
+$i=1,...,p$  
+$j=1,...,r$  
+$e \sim N(0,\sigma^2)$ independentes  
+
+
+### Modelo de desvios medios
+$$y_{ij}= \mu + \tau_i + e_{ij}$$
+$y_{ij}$: observação ij  
+$\mu$: média geral  
+$\tau_i$: efeito do tratamento i  
+$e_{ij}$: erro aleatório  
+$i=1,...,p$  
+$j=1,...,r$  
+$e \sim N(0,\sigma^2)$ independentes  
+
+### Modelo de casela de Referência
+se $i=1$
+$$y_{ij}= \mu_1 + e_{ij}  $$
+se $i\ne1$  
+$$y_{ij}= \mu_1 + \tau_i + e_{ij} $$
+$y_{ij}$: observação ij  
+$\mu$: média do nivel 1  
+$\tau_i$: efeito do tratamento i  
+$e_{ij}$: erro aleatório  
+$i=1,...,p$  
+$j=1,...,r$  
+$e \sim N(0,\sigma^2)$ independentes  
+
+### Modelo Aditivo (Blocagem)
+$$y_{ijk}= \mu + \tau_i + \beta_j+ e_{ijk}$$
+$$\sum_{j=1}^{J}=\sum_{i=1}^{r}=0$$
+$y_{ijk}$: observação ij  
+$\mu$: média geral  
+$\tau_i$: efeito do tratamento i  
+$\beta_j$: efeito do bloco j  
+$e_{ij}$: erro aleatório  
+$i=1,...,p$  
+$j=1,...,r$  
+$e \sim N(0,\sigma^2)$ independentes  
+
+### Modelo Aditivo (Blocagem) 2 fatores
+$$y_{ijkl}= \mu + \tau_i + \gamma_j+ (\tau_i\gamma_j) +\beta_k+ e_{ijkl}$$
+$$\sum_{j=1}^{J}=\sum_{i=1}^{r}=0$$
+$y_{ij}$: produção de batatas ij  
+$\mu$: média geral  
+$\tau_i$: efeito do tratamento i  
+$\gamma_i$: efeito do tratamento j  
+
+$\beta_j$: efeito do bloco j  
+$e_{ij}$: erro aleatório  
+$i=1,...,8$  
+$j=1,...,4$  
+$e \sim N(0,\sigma^2)$ iid  
+
+### Modelo de ANCOVA
+
+$$y_{ij}= \mu+ \beta * Z{ij} + X_i + e_{ij}$$
+
+$y_{ij}$: observação ij  
+$\mu$: média geral  
+$X_i$: efeito do tratamento i  
+$\beta$: Coeficiente linear que indica dependencia de $y_{ij}$ e $z_{ij}$  
+$Z_{ij}$: observação ij da covariável  
+$e_{ij}$: erro aleatório  
+$i=1,...,p$  
+$j=1,...,r$  
+
+Assumimos que  $y_{ij}$ e $z_{ij}$ possuem relação linear, que o coeficiente de cada Z é identico $\beta \ne0$, que $\sum_{i=1}^{r}=0$,   
+$e \sim N(0,\sigma^2)$ iid e que não há interação entre X e Z.
+
+
+### Modelo DCA Fatorial Cruzado
+$$y_{ijk}= \mu + \tau_i + \beta_j+ \gamma_{ij} + e_{ijk}$$
+$$\sum_{j=1}^{J}=\sum_{i=1}^{r}=0$$
+$y_{ij}$: observação ij  
+$\mu$: média geral  
+$\tau_i$: efeito do tratamento i  
+$\gamma_{ij}$: interção entre i-ésimo efeito $\beta$ e j-ésimo efeito $\gamma$  
+$e_{ij}$: erro aleatório  
+$i=1,...,p$  
+$j=1,...,r$  
+$e \sim N(0,\sigma^2)$ independentes  
+
+### Modelo fatorial 2^3
+$$y_{ijkl}= \mu + \beta_{1j}+ \beta_{2k}+ \beta_{3l}+ \\+ \beta_{12jk}+ \beta_{13jl}+ \beta_{23kl}+\\ \beta_{123jkl}+ e_{ijkl}$$
+$e \sim N(0,\sigma^2)$  
+$$\sum_{j=1}^{a}\beta_{1j}=\sum_{k=1}^{r}\beta_{2k}=...=\sum_{k=1}^{r}\beta_{123jkl}=0$$ (restrição de identificabilidade)
+
+
+### Modelo fatorial 2^4
+<!-- $$y_{ijk}= \mu + \beta_{1j}++ \beta_{2k}++ \beta_{3l}+\beta_{4m}+ \\+ \beta_{12jk}+ \beta_{13jl}+ \beta_{14jm}+ e_{ijk}$$ -->
+```{r pressure, echo=FALSE, fig.cap="", out.width = '100%'}
+knitr::include_graphics("D:/Yugo/Academico/IME/2020-2/MAE0327 - Planejamento e Pesquisa II/Listas/P1/R/images/modelo-fatorial-2k.jpg")
+```
+
+Adicionar fatores. Termos de interação de mais alta ordem como fatores residuais
+
+### Modelo Delineamento Fatorial Hierárquico - está faltando algo no somatorio
+$$y_{ijk}= \mu + \tau_i + \beta_{j(i)}+ e_{ijk}$$
+$$\sum_{j=1}^{J}=\sum_{i=1}^{r}=0$$
+$y_{ij}$: observação ij  
+$\mu$: média geral  
+$\tau_i$: efeito do tratamento i  
+$\beta_j$: efeito do tratamento j dentro do tratamento i  
+$e_{ij}$: erro aleatório  
+$i=1,...,p$  
+$j=1,...,r$  
+$e \sim N(0,\sigma^2)$ independentes  
+
+
+### Modelo de Efeitos Aleatórios (1 fator)
+
+
+$$y_{ij}= \mu + e_{ij}  =\mu+\tau_j++ e_{ij}$$
+$y_{ij}$: observação ij  
+$\mu$: componente fixo que modela o valor esperado de y  
+$\tau_j$: efeito aleatorio do nivel j  
+$e_{ij}$: erro aleatório  
+$i=1,...,J$  
+$j=1,...,n_j$  
+$\tau \sim N(0,\sigma^2_a)$  
+$e \sim N(0,\sigma^2_e)$  
+$\tau_j$ independente de $e_{ij}$
+
+### Modelo Dois Fatores Aleatórios
+$$y_{ijk}= \mu + \tau_j + \beta_k+ \gamma_{jk} + e_{ijk}$$
+$$\sum_{j=1}^{n_j}\tau_j=\sum_{i=1}^{r}\beta_k=0$$
+$y_{ijk}$: observação ijk  
+$\mu$: média geral  
+$\tau_i$: efeito do tratamento i  
+$\gamma_{ij}$: interção entre i-ésimo efeito $\beta$ e j-ésimo efeito $\gamma$  
+$e_{ij}$: erro aleatório  
+$i=1,...,n_{jk}$  
+$j=1,...,a$  
+$k=1,...,b$  
+$\tau_j \sim N(0,\sigma^2_A)$  
+$\beta_k \sim N(0,\sigma^2_B)$  
+$\gamma_{jk} \sim N(0,\sigma^2_{AB})$  
+$e_{ijk} \sim N(0,\sigma_e^2)$  
+$\tau_j$,$\beta_k$,$\gamma_{jk}$,$e_{ijk}$ independentes  
+$y_{ijk}\sim N(0,\sigma^2_A+\sigma^2_B+\sigma^2_{AB}+\sigma_e^2)$
+
+
+### Modelo Misto: 1 fator fixo, 1 fator Aleatórios
+$$y_{ijk}= \mu + \tau_j + \beta_k+ \gamma_{jk} + e_{ijk}$$
+$$\sum_{j=1}^{a} \tau_j=0$$ (Formulação restrita do modelo)
+$y_{ijk}$: observação ijk  
+$\mu$: média geral  
+$\tau_j$: efeito do tratamento j  
+$\beta_k$: efeito aleatórios do tratamento k
+$\gamma_{ij}$: interção entre i-ésimo efeito $\beta$ e j-ésimo efeito $\gamma$  
+$e_{ij}$: erro aleatório  
+$i=1,...,n_{jk}$  
+$j=1,...,a$  
+$k=1,...,b$  
+$\tau_j \sim N(0,\sigma^2_A)$  
+$\beta_k \sim N(0,\sigma^2_B)$  
+$\gamma_{jk} \sim N(0,\frac{a-1}{a}\sigma^2_{AB})$  
+
+$e_{ijk} \sim N(0,\sigma_e^2)$  
+$\beta_k$,$\gamma_{jk}$,$e_{ijk}$ independentes  
+$Cov(\gamma_{jk},\gamma_{j'k}=- \frac{1}{a}\sigma^2_{AB})$,$j \neq j'$
+
+$y_{ijk}\sim N(\mu+\tau_i,\sigma^2_B+ \frac{a-1}{a}\sigma^2_{AB}+\sigma_e^2)$
+
+### Modelo delineamento split plot
+$$y_{ijk}= \mu + \tau_j + u_{ij} + \beta_k+ \gamma_{jk} + e_{ijk}$$
+$y_{ijk}$: observação ijk  
+$\mu$: média geral  
+$\tau_j$: efeito do tratamento j  
+$\beta_k$: efeito aleatórios do tratamento k
+$\gamma_{ij}$: interção entre i-ésimo efeito $\beta$ e j-ésimo efeito $\gamma$  
+$e_{ij}$: erro aleatório  
+$i=1,...,n_{jk}$  
+$j=1,...,a$  
+$k=1,...,b$  
+
+$u_{ij} \sim N(0,\sigma^2_1)$   independente a $e_{ijk} \sim N(0,\sigma^2_e)$  
+
+
+### Modelo com Medidas Repetidas em um Único Fator ok
+$$y_{ij}= \mu + \rho_i + \tau_j + e_{ij}$$
+$y_{ij}$: observação ij  
+$\mu$: média geral  
+$\tau_j$: efeito fixo do tratamento j  
+$\rho_i$: componente aleatório de variância e covariância entre as respostas 
+$e_{ij}$: erro aleatório  
+$i=1,...,r$  
+$j=1,...,a$  
+$$\sum_{j=1}^{a} \tau_j=0$$ (Formulação restrita do modelo)
+$\rho_i \sim N(0,\sigma^2_\rho)$   independente a $e_{ij} \sim N(0,\sigma^2_e)$  
+$y_{ij} \sim N(\mu+\tau_j;\sigma_\rho^2+\sigma_e^2)$
+$$Cov(y_{ij};y_{i'j'})=\begin{cases}
+ \sigma_\rho^2 +  \sigma_e^2 & i=i'; \;j=j' \\
+ \sigma_\rho^2  & i=i'; \; j\neq j' \\
+ 0 & c.c.
+ \end{cases}$$
+$Cor(y_{ij};y_{i'j'})=\frac{\sigma_\rho^2}{\sigma_\rho^2+\sigma_e^2}$ Coeficiente de correlação intra-classe (iniforme para todos os sujeitos
+
+
+### Modelo Delineamentos com Medidas Repetidas Em Dois Fatores
+$$y_{ijk}= \mu + \rho_i + \tau_j + \beta_k + \gamma_{jk} + e_{ijk}$$
+$i=1,...,r$  
+$j=1,...,a$  
+$k=1,...,b$  
+$$\sum_{j=1}^{a}\tau_j=\sum_{k=1}^{r}\beta_k=\sum_{j=1}^{a}\gamma_{jk}=\sum_{k=1}^{r}\gamma_{jk}=0$$ (fatores fixos com restrição de identificabilidade)
+$\rho_{i} \sim N(0,\sigma^2_\rho)$   independente a $e_{ijk} \sim N(0,\sigma^2_e)$  
+
+### Modelo Delineamentos Fatoriais axb com Medidas Repetidas em Um Único Fator
+$$y_{ijk}= \mu + \rho_{i(j)} + \tau_j + \beta_k + \gamma_{jk} + e_{ijk}$$
+
+### Modelo Delineamento Quadrado Latino sem repetições ok
+$$y_{jkl}= \mu + \tau_j + \beta_{Hk} + \beta_{Vl} + e_{jkl}$$
+
+$j=1,...,r$  
+$k=1,...,r$  
+$l=1,...,r$  
+
+$y_{jkl}$: resposta do j-ésimo tratamento sob o k-ésimo bloco horizontal e o l-ésimo bloco vertical.  
+$\mu$: média geral  
+$\tau_j$: efeito fixo do tratamento j  
+$\beta_{Hk}$ Efeito do k-ésimo bloco horizontal  
+$\beta_{Vk}$ Efeito do l-ésimo bloco vertical  
+$e_{ijl}$: erro aleatório  
+$e_{jkl} \sim N(0;\sigma^2)$
+Assume-se que os efeitos são aditivos.
+
+$$\sum_{j=1}^{a}\tau_j=\sum_{k=1}^{r}\beta_{Hk}=\sum_{j=1}^{a}\beta_{Vl}=0$$
+Resíduos compostos por efeitos remanescentes (diferentes interações)
+
+### Modelos Delineamento QL com repetições
+#### Modelo Delineamento Quadrado Latino BV e BH reusados ok
+$$y_{jklm}= \mu + \tau_j + \beta_{Qm} + \beta_{Hk} + \beta_{Vl} + e_{jklm}$$
+
+$j=1,...,r$  
+$k=1,...,r$  
+$l=1,...,r$  
+$m=1, ...,M$  
+$y_{jklm}$: resposta do j-ésimo tratamento sob o k-ésimo bloco horizontal, o l-ésimo bloco vertical e o m-ésimo quadrado.  
+$\mu$: média geral  
+$\tau_j$: efeito fixo do tratamento j  
+$\beta_{Hk}$ Efeito do k-ésimo bloco horizontal  
+$\beta_{Vk}$ Efeito do l-ésimo bloco vertical  
+$\beta_{Qm}$ Efeito do m-ésimo quadrado
+$e_{ijlm}$: erro aleatório  
+$e_{jklm} \sim N(0;\sigma^2)$
+Assume-se que os efeitos são aditivos.
+
+$$\sum_{j=1}^{r}\tau_j=\sum_{k=1}^{r}\beta_{Hk}=\sum_{j=1}^{r}\beta_{Vl}=\sum_{j=1}^{M}\beta_{Qm}=0$$
+
+
+#### Modelo Delineamento Quadrado Latino BV reusados ok
+$$y_{jklm}= \mu + \tau_j + \beta_{Qm} + \beta_{Hk(m)} + \beta_{Vl} + e_{jklm}$$
+
+$j=1,...,r$  
+$k=1,...,r$  
+$l=1,...,r$  
+$m=1, ...,M$  
+$y_{jklm}$: resposta do j-ésimo tratamento sob o k-ésimo bloco horizontal, o l-ésimo bloco vertical e o m-ésimo quadrado.  
+$\mu$: média geral  
+$\tau_j$: efeito fixo do tratamento j  
+$\beta_{Hk(m)}$ Efeito do k-ésimo bloco horizontal aninhado com quadrado  
+$\beta_{Vl}$ Efeito do l-ésimo bloco vertical  
+$\beta_{Qm}$ Efeito do m-ésimo quadrado
+$e_{ijlm}$: erro aleatório  
+$e_{jklm} \sim N(0;\sigma^2)$
+Assume-se que os efeitos são aditivos.
+
+$$\sum_{j=1}^{r}\tau_j=\sum_{k=1}^{r}\beta_{Hk(m)}=\sum_{j=1}^{r}\beta_{Vl}=\sum_{j=1}^{M}\beta_{Qm}=0$$
+
+#### Modelo Delineamento Quadrado Latino BH reusados ok
+$$y_{jklm}= \mu + \tau_j + \beta_{Qm} + \beta_{Hk} + \beta_{Vl(m)} + e_{jklm}$$
+
+$j=1,...,r$  
+$k=1,...,r$  
+$l=1,...,r$  
+$m=1, ...,M$  
+$y_{jklm}$: resposta do j-ésimo tratamento sob o k-ésimo bloco horizontal, o l-ésimo bloco vertical e o m-ésimo quadrado.  
+$\mu$: média geral  
+$\tau_j$: efeito fixo do tratamento j  
+$\beta_{Hk}$ Efeito do k-ésimo bloco horizontal  
+$\beta_{Vl(m)}$ Efeito do l-ésimo bloco vertical  
+$\beta_{Qm}$ Efeito do m-ésimo quadrado
+$e_{ijlm}$: erro aleatório  
+$e_{jklm} \sim N(0;\sigma^2)$
+Assume-se que os efeitos são aditivos.
+
+$$\sum_{j=1}^{r}\tau_j=\sum_{k=1}^{r}\beta_{Hk}=\sum_{j=1}^{r}\beta_{Vl(m)}=\sum_{j=1}^{M}\beta_{Qm}=0$$
+
+
+
+## Soma de quadrados
+SQRes
+$\sum\sum(y_{ij}-\bar y_{i}.)^2$
+
+```{r}
+# SQRes <-  
+# SQTrat <-
+SQRes <-
+SQTrat <-
+dfTrat <- 
+dfRes <- 
+QMTrat <- SQTrat/dfTrat
+QMRes <- SQRes/dfRes
+F <- QMTrat/QMRes
+
+```
+
+###  Calculo de SQtratamentos
+```{r}
+media_i <- c(6.5, 4.5, 5.7, 5.7, 5.1) #média dos tratamentos
+media_g<- mean(media_i) #media global
+soma_i <- NULL
+i <- 1
+while (i <=length(media_i)) {
+  
+  soma_i[i] <- 3*(media_i[i]-media_g)^2
+  i<-i+1
+  
+}
+soma_i
+sstrat <- sum(soma_i)
+sstrat
+```
+
+
+# Contrastes
+```{r}
+#Teste do efeito de interação no Fatorial 2x2: 1 grau de liberdade
+# H0: (mi_00-mi_01) = (mi_10-mi_11) "paralelismo no gráfico de interação"
+# Portanto, H0: mi_00 - mi_01 - mi_10 + mi_11 = 0
+# Na Parametrização Casela de Referência do R:
+#mi_00=mi
+#mi_10=mi+tau1
+#mi_01=mi+tau2
+#mi11=mi+tau1+tau2+tau12
+#Então, equivale a testar H0: C Beta = 0
+# com C=(0,0,0,1) e Beta=(mi_00,tau1,tau2,tau12)'
+
+#Função para calcular IC para combinações lineares de Beta 
+# entra com ajuste, contraste, graus de liberdade e significancia
+ci=function(fitout,C,df,alpha=0.05) {   
+  beta=fitout$coefficients #calcula beta chapeu 
+  V=vcov(fitout) #var do beta chapeu - matriz de var-cov
+  Cb=C%*%beta
+  se=round(sqrt(diag(C%*%V%*%t(C))),4) #erro padrao
+  tval=qt(1-alpha/2,df) #valor t
+  low=round(Cb-tval*se,4) #para construir o intervalo de confianca
+  up=round(Cb+tval*se,4)
+  m=cbind("C",Cb,se,low,up)
+  dimnames(m)[[2]]=c(paste("C"),"estimate","se",paste(100*(1-alpha),"% Conf.",sep=""),"limits")
+  m 
+} 
+
+```
+### Contrastes - casela de referencia
+```{r mais-contrastes}
+model.matrix(fit1)
+gl.1<-fit1$df.residual
+Ci.1<-matrix(c(0,0,0,1),nrow=1) 
+ci(fit1,Ci.1,gl.1) #IC para o efeito de interação.
+#estimativa é pra quanto mi00-mi01 é diferente de mi10-mi11
+
+#Outros exemplos: (veja o gráfico de interação)
+#IC para a diferença entre mi_00-mi_01 = -tau2
+gl.1<-fit1$df.residual
+Cf20.1<-matrix(c(0,0,-1,0),nrow=1) 
+ci(fit1,Cf20.1,gl.1) #IC para o efeito de f2 em f1=0
+
+#IC para a diferença entre mi_10-mi_11 = - tau2 - tau12
+g1.l<-fit1$df.residual
+Cf21.1<-matrix(c(0,0,-1,-1),nrow=1) 
+ci(fit1,Cf21.1,gl.1) #IC para o efeito de f2 em f1=1
+
+```
+
+### Contrastes - Medias
+```{r}
+##Modelagem alternativa: Parametrização de Médias via Regressão
+
+X<-kronecker(diag(4),c(rep(1,10)))
+X
+fit3 <- lm(y~-1+X,data=dat)
+summary(fit3)
+model.matrix(fit3)
+fit3$coeff
+
+model.matrix(fit1)
+model.matrix(fit2)
+
+#Obter IC para interação sob o modelo fit3
+# H0: mi_00 - mi_01 - mi_10 + mi_11 = 0
+#Equivale: C Beta = 0, com C=(1,-1,-1,1)
+gl.3<-fit3$df.residual
+Ci.3<-matrix(c(1,-1,-1,1),nrow=1) 
+ci(fit3,Ci.3,gl.3) #IC para o efeito de interação (idem ao caso anterior)
+
+#Outros exemplos:
+#IC para a diferença entre mi_00-mi_01 
+gl.3<-fit3$df.residual
+Cf20.3<-matrix(c(1,0,-1,0),nrow=1) 
+ci(fit3,Cf20.3,gl.3) #IC para o efeito de f2 em f1=0 (idem ao caso anterior)
+
+#IC para a diferença entre mi_10-mi_11
+g1.3<-fit3$df.residual
+Cf21.3<-matrix(c(0,1,0,-1),nrow=1) 
+ci(fit3,Cf21.3,gl.3) #IC para o efeito de f2 em f1=1 (idem ao caso anterior)
+
+```
+
+
+# Testes de Hipotese
+## Teste de Tukey
+```{r}
+fit.tu1 <- TukeyHSD(fit1)
+fit.tu1
+plot(fit.tu1)
+```
+## Teste Chi-Square
+
+```{r}
+bd <- read.delim("D:/Yugo/Academico/IME/2020-2/MAE0560 - Análise de Dados Categorizados/Listas/P1/R/bd-chi2xlsx.txt", row.names = 1)
+bd <- as.table(as.matrix(bd))
+
+chisq <- chisq.test(bd)
+chisq
+
+# Observed counts
+print(" ")
+print("valores observados")
+chisq$observed
+
+# Expected counts
+print(" ")
+print("valores esperados")
+round(chisq$expected,2)
+
+# If you want to know the most contributing cells to the total Chi-square score, you just have to calculate the Chi-square statistic for each cell:
+# The above formula returns the so-called Pearson residuals (r) for each cell (or standardized residuals)
+print(" ")
+print("Residuos")
+round(chisq$residuals, 3)
+
+# Residuos padronizados
+# Se for acima de 2, o ajuste esta ruim
+print("Residuos padronizados")
+chisq$stdres
+
+# grafico de residuos
+library("graphics")
+mosaicplot(bd, shade = TRUE, las=2, main = "titulo")
+```
+
+## Teste Fisher
+```{r}
+fisher.test(bd)
+```
+
+## Teste PP
+```{r}
+# H_0 = polinomio possui raiz unitária (série não estacionária)
+library(tseries)
+pp.test(db1)
+```
+
+## Teste ADF
+
+```{r}
+#Teste Dickey Fuller para ver se série é estacionária
+# H_0 = polinomio possui raiz unitária (série não estacionária)
+library(tseries)
+adf.test(db1, alternative = "stationary")
+```
+
+## Equacao polinomial
+```{r}
+x2 <- 25+1.96^2    #coef de x^2
+x1 <- -1.96        #coef de x^1
+x0 <- 0            #coef de x^0
+polinomio     <- c(x0,x1,x2)
+rootImaginary <- polyroot(polinomio)
+rootReal      <- Re(rootImaginary)
+rootReal
+round(rootReal,2)
+```
+
+# Inferencia Estatistica
+### Wald
+```{r}
+# SE - Standard Deviation
+pi_chapeu <- 0           # proporcao amostral
+n         <- 25          # tamanho amostral
+
+se        <- sqrt(pi_chapeu*(1-pi_chapeu/n))
+se
+
+```
+
+### Score
+```{r}
+# SE - Standard Deviation
+pi_0      <- 0.07
+n         <- 25
+se        <- sqrt(pi_0*(1-pi_0/n))
+se
+round(se,2)
+```
+
+```{r}
+# Estatisctica z
+z <- (p_chapeu-pi)/se
+z
+```
+
+# IC
+
+### IC - genérico (erro com distribuição normal)
+```{r}
+# z_alpha <- qnorm(0.95) #90%
+# z_alpha <- qnorm(0.995) #99%
+z_alpha <- qnorm(0.975) #95%
+se <- sqrt(58000)
+# se <- 
+error <- z_alpha*se 
+pi_chapeu <- 751
+left  <- pi_chapeu-error
+right <- pi_chapeu+error
+c(left,right)
+round(c(left,right),2)
+```
+
+### IC - Binomial
+```{r}
+# z_alpha <- qnorm(0.95) #90%
+# z_alpha <- qnorm(0.995) #99%
+z_alpha <- qnorm(0.975) #95%
+
+# se <- 
+error <- z_alpha*se 
+
+left  <- pi_chapeu-error
+right <- pi_chapeu+error
+c(left,right)
+round(c(left,right),2)
+```
+
+### IC - Efeito Aleatorio
+```{r}
+library(lme4)
+confint(fit1, method="Wald") 
+confint(fit1) 
+confint(fit1, method="boot", nsim=1000) 
+
+```
+
+# p valor
+### F distribution
+```{r}
+#df1 dl do tratamento
+# df2 gl do residuo
+pf(1.37,df1=21,df2=32)
+```
+
+### z distribution
+```{r}
+# p-valor de z H1
+#inserir valor z. Devolve p-valor da acumulada
+# da esquerda para direita
+
+# se quiser p-valor a direita de valor,
+1-pnorm(1.959964) #a direita
+
+# se quiser p-valor a esquerda de valor,
+pnorm(-1.644854) #a esquerda
+```
+
+
+# Ajustes regressao
+### Efeito aleatório
+```{r}
+library(lme4)
+fit2<- lmer(y ~ (1|fa),data=dat) #fa é fator aleatório
+fit2
+a2<-anova(fit2)
+a2
+summary(fit2)
+coef(fit2) #(mi_j) = coef(fit2)
+
+```
+
+
+### Quadrado latino
+```{r}
+mod1 <- aov(y ~ factor(bh) + factor(bv) + factor(trat), data = dat)
+summary(mod1)
+```
+
+```{r}
+# comparando sem a blocagem
+mod2 <- aov(y ~ factor(Trat), data = dat)
+summary(mod2)
+
+```
+
+### Eficiência da blocagem QL
+
+```{r}
+MS_bh   <- 182.17
+MS_bv   <- 17.17
+MS_trat <- 73.50
+MS_res  <- 4.76
+r       <- 3
+  
+# Eficiência
+E_HV <- round((MS_bh + MS_bv + (r-1) * MS_res)/((r+1) * MS_res),4)
+E_H  <- round((MS_bv + (r-1) * MS_res)/((r+1) * MS_res),4)
+E_V  <- round((MS_bh + (r-1) * MS_res)/((r+1) * MS_res),4)
+
+cat(sprintf("Eficiência de HV é %s \n", E_HV))
+cat(sprintf("Eficiência de H é %s \n", E_H))
+cat(sprintf("Eficiência de V é %s \n", E_V))
+```
+
+
+# Series temporais
+
+## Periodograma
+```{r}
+# detach("package:GeneCycle", unload = TRUE)
+library(TSA) # biblioteca do periodograma gráfico
+periodogram(db1)
+library(GeneCycle) #biblioteca do periodograma valores
+periodogram(db1)
+I <-periodogram(db1)$spec
+maxj <- which.max(I)  #retorna j com ordenada mais alta
+maxj
+
+```
+
+
+```{r}
+
+```
+
+
