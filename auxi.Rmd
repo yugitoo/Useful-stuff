@@ -367,6 +367,8 @@ Total   & $N-1$ \\
 
 
 # Analise de sobrevivencia
+
+## banco de dados com censura
 ```{r bd, echo = TRUE}
 t     <- c(5, 17, 20, 24, 32, 35, 40, 46, 47, 50, 59, 74)
 delta <- c(1,1,0,1,1,0,1,1,1,1,1,0)
@@ -375,11 +377,142 @@ db1    <- data.frame(t,delta)
 db0
 ```
 
+## Ajuste Kaplan-Meier
 ```{r}
+library(survival)
 resp1 <- Surv(time=db1$t, event=db1$delta, type='right')
-model1 <- survfit(resp1~1, data=db1,conf.type = "plain")
+model1 <- survfit(resp1~1, data=db1,conf.type = "log-log")
 print(model1, print.rmean=TRUE)
 # summary(model1)
+
+```
+## Analise de residuos Cox Snell - grafico cox snell e deviance - Weibull
+```{r}
+
+#dummies:
+df4 <- mutate(df4,idade2=ifelse(idade=="[60,75)",1,0))
+df4 <- mutate(df4,idade3=ifelse(idade=="[75,105)",1,0))
+
+## Weibull ----
+# preditores lineares
+xb_weibull =fit_weibul$coefficients[1]+
+  fit_weibul$coefficients[2]*df4$idade2+
+  fit_weibul$coefficients[3]*df4$idade3 +
+  fit_weibul$coefficients[4]*df4$hr+
+  fit_weibul$coefficients[5]*df4$diasbp+
+  fit_weibul$coefficients[6]*df4$chf
+
+# res
+res_weibull=(log(df4$lenfol)-xb_weibull)/fit_weibul$scale
+residuos_weibull = exp(res_weibull)
+cox_snell_weibull=(df4$lenfol^(1/fit_weibul$scale))*exp(-xb_weibull/fit_weibul$scale)
+
+# Estimador Kaplan Meier
+KM_weibull=survfit(Surv(cox_snell_weibull,fstat)~1, data=df4)
+Acumulada_KM_weibull=-log(KM_weibull$surv)
+
+
+# Estimador Nelson Aalen
+Surv_Aa_wei <- survfit(coxph(Surv(cox_snell_weibull, df4$fstat)~1))
+TFAcum_Aa_wei <- -log(Surv_Aa_wei$surv)
+
+
+# graficos cox snell
+ppi = 300
+png(file="CoxSnell_wei.png", width=8*ppi, height=6*ppi, res=ppi)
+plot(KM_weibull$time,Acumulada_KM_weibull, col="dark red", pch=16, main="Função de risco
+acumulada (Cox-Snell) - Modelo Weibull", xlab="tempo", ylab="-log(S(t))", cex=0.8 )
+points(Surv_Aa_wei$time,TFAcum_Aa_wei, col="navy blue", pch=16, cex=0.8)
+abline(0,1,lty=2)
+cores <- c("dark red", "navy blue")
+legenda <- c("Kaplan-Meier", "Nelson-Aalen")
+legend("bottomright",inset = 0, legend = legenda, col = cores, lty=1,cex=0.8,box.lty=0,bg="transparent")
+dev.off()
+
+# Grafico Deviance
+m_weibull = df4$fstat- cox_snell_weibull
+deviance_weibull = sqrt(-2*(m_weibull+df4$fstat*log(df4$fstat- m_weibull)))*ifelse(m_weibull<0,-1,1)
+
+plot(df4$lenfol, deviance_weibull, col = "dark green",pch=16, main="Resíduos Deviance - Weibull", xlab="Tempo", ylab="Resíduos deviance")
+
+```
+
+## Analise de residuos Cox Snell - grafico cox snell e deviance - Log-logistica
+```{r}
+## llog ----
+
+# preditores lineares
+xb_llog =fit_llog$coefficients[1]+
+  fit_llog$coefficients[2]*df4$idade2+
+  fit_llog$coefficients[3]*df4$idade3 +
+  fit_llog$coefficients[4]*df4$hr+
+  fit_llog$coefficients[5]*df4$diasbp+
+  fit_llog$coefficients[6]*df4$chf
+
+# res
+res_llog=(log(df4$lenfol)-xb_llog)/fit_llog$scale
+residuos_llog = exp(res_llog)
+cox_snell_llog=log(1+(df4$lenfol^(1/fit_llog$scale))*exp(-xb_llog/fit_llog$scale))
+
+
+# Estimador Kaplan Meier
+KM_llog=survfit(Surv(cox_snell_llog,fstat)~1, data=df4)
+Acumulada_KM_llog=-log(KM_llog$surv)
+
+# Estimador Nelson Aalen
+Surv_Aa_llog <- survfit(coxph(Surv(cox_snell_llog, df4$fstat)~1))
+TFAcum_Aa_llog <- -log(Surv_Aa_llog$surv)
+
+# graficos cox snell
+ppi = 300
+png(file="CoxSnell_llog.png", width=8*ppi, height=6*ppi, res=ppi)
+plot(KM_llog$time,Acumulada_KM_llog, col="dark red", pch=16, main="Função de risco
+acumulada (Cox-Snell) - Modelo Log-Logística", xlab="tempo", ylab="-log(S(t))", cex=0.8 )
+points(Surv_Aa_llog$time,TFAcum_Aa_llog, col="navy blue", pch=16, cex=0.8)
+abline(0,1,lty=2)
+cores <- c("dark red", "navy blue")
+legenda <- c("Kaplan-Meier", "Nelson-Aalen")
+legend("bottomright",inset = 0, legend = legenda, col = cores, lty=1,cex=0.8,box.lty=0,bg="transparent")
+dev.off()
+
+# Grafico Deviance
+m_llog = df4$fstat- cox_snell_llog
+deviance_llog = sqrt(-2*(m_llog+df4$fstat*log(df4$fstat-m_llog)))*ifelse(m_llog<0,-1,1)
+
+plot(df4$lenfol, deviance_llog, col = "dark green",pch=16, main="Resíduos Deviance - Log-Logístico", xlab="Tempo", ylab="Resíduos deviance")
+```
+
+
+## Curvas de Kaplan-Meier dos residuos juntas
+
+```{r}
+# #Curvas de Kaplan-Meier dos resíduos juntas
+t_comb<-sort(c(cox_snell_weibull,cox_snell_llog))
+teorica<- exp(-t_comb)
+png(file="CoxSnell_exp-wei.png", width=8*ppi, height=6*ppi, res=ppi)
+plot(t_comb, teorica, col="black", type="l",main="Curvas de Kaplan-Meier dos resíduos de
+Cox-Snell", xlab="resíduos", ylab="Função de sobrevivência",lty=2 )
+points(KM_weibull$time,KM_weibull$surv, col="indianred4", type="s", lwd=1.5 )
+points(KM_llog$time,KM_llog$surv, col="seagreen", type="s", lwd=1.5)
+legend(1.5,1,c("Teórica","Modelo Weibull","Modelo loglogístico"),col=c("black","indianred4","seagreen"),lty=c(2,1,1),
+       lwd=c(1,1.5,1.5))
+dev.off()
+
+```
+
+
+## Gráfico Kaplan-Meier
+
+```{r}
+instantes<- seq(0,70,20)
+em_risco<- rep(-7, length(instantes))
+for(i in 1:length(instantes)){
+  em_risco[i]<-max(model1$n.risk[model1$time>=instantes[i]])
+}
+
+plot(model1, xlab = "Tempo em dias", ylab="Sobrevivência", mark.time = TRUE,
+     main="Estimador de Kaplan-Meier", lwd=2, xlim=c(0,80), conf.type = "plain")
+mtext(c("Em risco",em_risco), at=c(-7,instantes), line=2, side=1,cex=0.9, col="gray3")
 
 ```
 
@@ -1045,69 +1178,6 @@ z <- (p_chapeu-pi)/se
 z
 ```
 
-# IC
-
-### IC - genérico (erro com distribuição normal)
-```{r}
-# z_alpha <- qnorm(0.95) #90%
-# z_alpha <- qnorm(0.995) #99%
-z_alpha <- qnorm(0.975) #95%
-se <- sqrt(58000)
-# se <- 
-error <- z_alpha*se 
-pi_chapeu <- 751
-left  <- pi_chapeu-error
-right <- pi_chapeu+error
-c(left,right)
-round(c(left,right),2)
-```
-
-### IC - Binomial
-```{r}
-# z_alpha <- qnorm(0.95) #90%
-# z_alpha <- qnorm(0.995) #99%
-z_alpha <- qnorm(0.975) #95%
-
-# se <- 
-error <- z_alpha*se 
-
-left  <- pi_chapeu-error
-right <- pi_chapeu+error
-c(left,right)
-round(c(left,right),2)
-```
-
-### IC - Efeito Aleatorio
-```{r}
-library(lme4)
-confint(fit1, method="Wald") 
-confint(fit1) 
-confint(fit1, method="boot", nsim=1000) 
-
-```
-
-# p valor
-### F distribution
-```{r}
-#df1 dl do tratamento
-# df2 gl do residuo
-pf(1.37,df1=21,df2=32)
-```
-
-### z distribution
-```{r}
-# p-valor de z H1
-#inserir valor z. Devolve p-valor da acumulada
-# da esquerda para direita
-
-# se quiser p-valor a direita de valor,
-1-pnorm(1.959964) #a direita
-
-# se quiser p-valor a esquerda de valor,
-pnorm(-1.644854) #a esquerda
-```
-
-
 # Ajustes regressao
 ### Efeito aleatório
 ```{r}
@@ -1173,6 +1243,70 @@ maxj
 
 ```{r}
 
+```
+
+
+
+# IC
+
+### IC - genérico (erro com distribuição normal)
+```{r}
+# z_alpha <- qnorm(0.95) #90%
+# z_alpha <- qnorm(0.995) #99%
+z_alpha <- qnorm(0.975) #95%
+se <- sqrt(58000)
+# se <- 
+error <- z_alpha*se 
+pi_chapeu <- 751
+left  <- pi_chapeu-error
+right <- pi_chapeu+error
+c(left,right)
+round(c(left,right),2)
+```
+
+### IC - Binomial
+```{r}
+# z_alpha <- qnorm(0.95) #90%
+# z_alpha <- qnorm(0.995) #99%
+z_alpha <- qnorm(0.975) #95%
+
+# se <- 
+error <- z_alpha*se 
+
+left  <- pi_chapeu-error
+right <- pi_chapeu+error
+c(left,right)
+round(c(left,right),2)
+```
+
+### IC - Efeito Aleatorio
+```{r}
+library(lme4)
+confint(fit1, method="Wald") 
+confint(fit1) 
+confint(fit1, method="boot", nsim=1000) 
+
+```
+
+# p valor
+### F distribution
+```{r}
+#df1 dl do tratamento
+# df2 gl do residuo
+pf(1.37,df1=21,df2=32)
+```
+
+### z distribution
+```{r}
+# p-valor de z H1
+#inserir valor z. Devolve p-valor da acumulada
+# da esquerda para direita
+
+# se quiser p-valor a direita de valor,
+1-pnorm(1.959964) #a direita
+
+# se quiser p-valor a esquerda de valor,
+pnorm(-1.644854) #a esquerda
 ```
 
 
