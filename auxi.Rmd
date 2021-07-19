@@ -569,6 +569,14 @@ tabela3
 
 
 
+## Teste score - multiplicacao de matriz, matriz inversa, matriz transposta
+```{r}
+U <- c(-0.54,3.13)
+I <- matrix(c(5.607692,0,0,5.604634),2,2)
+t(U) %*% solve(I) %*% U
+```
+
+
 # Planejamento e pesquisa
 ### Criar dados Quadrado latino e DBAC
 Neste caso QL 3x3, pois r=3
@@ -1082,7 +1090,7 @@ fit.tu1 <- TukeyHSD(fit1)
 fit.tu1
 plot(fit.tu1)
 ```
-## Teste Chi-Square
+## Teste Chi-Square (qui-quadrado)
 
 ```{r}
 bd <- read.delim("D:/Yugo/Academico/IME/2020-2/MAE0560 - Análise de Dados Categorizados/Listas/P1/R/bd-chi2xlsx.txt", row.names = 1)
@@ -1309,4 +1317,11 @@ pf(1.37,df1=21,df2=32)
 pnorm(-1.644854) #a esquerda
 ```
 
+
+
+### Chi-Squared distribution (qui-quadrado)
+```{r}
+pchisq(15, df=2, lower.tail=FALSE) # para encontrar o p valor
+qchisq(0.05, df=2, lower.tail=FALSE) # para encontrar o quartil
+```
 
