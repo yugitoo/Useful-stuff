@@ -19,6 +19,11 @@ Codigos que podem ser uteis para analise estatística.
 $$\stackrel{ind}{\sim}$$
 
 
+
+## bold in math
+$$
+\alpha(t|\mathbf{x}) = 
+$$
 # General R stuff
 ## R Tricks
 ### Usando diferentes variáveis (com pequenas mudanças de nome) em loop
@@ -35,9 +40,11 @@ CLDQ_D2 <- c("SA", "FA", "SS", "AT", "FE", "PR")
 ```
 
 ## dados
-### Ler tabela txt
+
+### Ler tabela txt e dat
 ```{r read-data}
 db<- read.table("",header = TRUE)
+# db <- read.delim(file.choose(), sep=" ")
 db
 ```
 
@@ -97,6 +104,10 @@ dados.extra <- rbind(dados,c(90,90,1)) #acrescimo de 1 observação
 ```{r}
 library(openxlsx) # escrever arquivo exel
 write.xlsx(list_of_datasets, file = "Scores_Consolidadas.xlsx")
+```
+### Categorizar variavel continua pela mediana
+```{r}
+ifelse(db$sbp0 < median(db$sbp0), "menores","maiores")
 ```
 
 ## graficos
@@ -502,7 +513,7 @@ dev.off()
 
 
 ## Gráfico Kaplan-Meier
-
+### Usando plot
 ```{r}
 instantes<- seq(0,70,20)
 em_risco<- rep(-7, length(instantes))
@@ -513,6 +524,29 @@ for(i in 1:length(instantes)){
 plot(model1, xlab = "Tempo em dias", ylab="Sobrevivência", mark.time = TRUE,
      main="Estimador de Kaplan-Meier", lwd=2, xlim=c(0,80), conf.type = "plain")
 mtext(c("Em risco",em_risco), at=c(-7,instantes), line=2, side=1,cex=0.9, col="gray3")
+
+```
+
+### Usando ggsurvplot (survimer)
+```{r}
+library(survimer)
+# pressao sistolica
+model2 <- survfit(resp1~cat_sbp0, data=db,conf.type = "log-log")
+
+ggsurvplot(model2, 
+           conf.int=T,
+           pval=TRUE,
+           pval.coord = c(0,0.85),
+           surv.median.line = "hv",
+           risk.table=TRUE,
+           ggtheme=theme_minimal(),
+           ylim=c(0.8,1),
+           legend.title="Grupo",
+           risk.table.title="Em risco",
+           legend.labs=c("Menores","Maiores"),
+           ylab="Sobrevivência" ,
+           title ="Estimativas de Kaplan-Meier por Pressão Sistólica")+
+      labs(x="Tempo em dias")
 
 ```
 
