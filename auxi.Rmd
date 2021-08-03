@@ -24,6 +24,24 @@ $$\stackrel{ind}{\sim}$$
 $$
 \alpha(t|\mathbf{x}) = 
 $$
+
+## Erro no knit
+<!-- ! Package inputenc Error: Unicode character Ïƒ (U+03C3) -->
+<!-- (inputenc)                not set up for use with LaTeX. -->
+
+<!-- Try other LaTeX engines instead (e.g., xelatex) if you are using pdflatex. See https://bookdown.org/yihui/rmarkdown-cookbook/latex-unicode.html -->
+<!-- Error: LaTeX failed to compile cea1_analise.tex. See https://yihui.org/tinytex/r/#debugging for debugging tips. See cea1_analise.log for more info. -->
+<!-- In addition: There were 32 warnings (use warnings() to see them) -->
+<!-- Execution halted -->
+
+<!-- solucao -->
+
+<!-- output: -->
+<!--   bookdown::pdf_document2: -->
+<!--     latex_engine: lualatex -->
+<!--   tufte::tufte_handout: -->
+<!--     latex_engine: xelatex -->
+
 # General R stuff
 ## R Tricks
 ### Usando diferentes variáveis (com pequenas mudanças de nome) em loop
@@ -37,6 +55,13 @@ for(i in 1:8){
 
 }
 CLDQ_D2 <- c("SA", "FA", "SS", "AT", "FE", "PR")
+```
+
+### classificando o dado de acordo com casos (classifying according to cases)
+```{r}
+### Dados para modelagem estagio I
+
+est <- est %>% mutate(inv_prim0=case_when(estacoes=='verao'~"verao",estacoes=="outono"~"outono",estacoes=="primavera"~"inv_prim",estacoes=="inverno"~"inv_prim"))
 ```
 
 ## dados
@@ -529,7 +554,7 @@ mtext(c("Em risco",em_risco), at=c(-7,instantes), line=2, side=1,cex=0.9, col="g
 
 ### Usando ggsurvplot (survimer)
 ```{r}
-library(survimer)
+library(survminer)
 # pressao sistolica
 model2 <- survfit(resp1~cat_sbp0, data=db,conf.type = "log-log")
 
@@ -549,6 +574,13 @@ ggsurvplot(model2,
       labs(x="Tempo em dias")
 
 ```
+
+## organizar graficos ggplot
+```{r}
+arrange_ggsurvplots(list(plot1, plot2, plot3),
+                    print = TRUE,ncol = 2, nrow = 2)
+```
+
 
 ## tabela 1
 ```{r}
