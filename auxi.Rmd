@@ -44,6 +44,13 @@ $$
 
 # General R stuff
 ## R Tricks
+### Descarregar bibliotecas (unload all packeges)
+
+```{r}
+invisible(lapply(paste0('package:', names(sessionInfo()$otherPkgs)), detach, character.only=TRUE, unload=TRUE))
+```
+
+
 ### Usando diferentes variáveis (com pequenas mudanças de nome) em loop
 ```{r}
 for(i in 1:8){
@@ -72,6 +79,12 @@ db<- read.table("",header = TRUE)
 # db <- read.delim(file.choose(), sep=" ")
 db
 ```
+
+### ler como char
+```{r}
+as.character()
+```
+
 
 ### Ler xls
 ```{r}
