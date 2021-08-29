@@ -71,6 +71,23 @@ CLDQ_D2 <- c("SA", "FA", "SS", "AT", "FE", "PR")
 est <- est %>% mutate(inv_prim0=case_when(estacoes=='verao'~"verao",estacoes=="outono"~"outono",estacoes=="primavera"~"inv_prim",estacoes=="inverno"~"inv_prim"))
 ```
 
+### Diferente de NA (is not NA)
+```{r}
+!is.na(t1_ansied)
+```
+
+### Removendo NA (Drop NA)
+```{r}
+hormonios %>% drop_na(P4)
+```
+
+
+### classificando grupo
+```{r}
+(ifelse(est$estacoes=='verao' | est$estacoes=='outono', 0, 1))
+```
+
+
 ## dados
 
 ### Ler tabela txt e dat
@@ -116,9 +133,41 @@ colnames(X) <- c("ID", "Q1","Q2")
 Y <- melt(setDT(X), id.vars = c("ID"), variable.name = "questao")
 ```
 
+### long to wide
+```{r}
+reshape(ansiedade, idvar = "record_id", timevar = "redcap_event_name", direction = "wide")
+```
+
+
+### long to wide 2
+```{r}
+## transformando long to wide
+alcool <- spread(alcool, 
+                 key = "redcap_event_name",
+                 value = "total_score"
+)
+alcool
+```
+
+### outer merge (union)
+```{r}
+# juntando as colunas
+
+dados2 <- merge(x = ansiedade, y = alcool, by = "record_id", all = TRUE)
+# https://stackoverflow.com/questions/1299871/how-to-join-merge-data-frames-inner-outer-left-right
+```
+
+
 ### Verify duplicate
 ```{r}
 any(duplicated(Controle_SA$ID))
+```
+
+### count unique
+```{r}
+length(unique(dados1$record_id)) 
+# ou
+length(table(dados1$record_id)) 
 ```
 
 
@@ -126,6 +175,12 @@ any(duplicated(Controle_SA$ID))
 ```{r}
 gsub("\n", " ", db)
 ```
+
+### Substituir valor em dataframe (Replace value in dataframe)
+```{r}
+junk$nm[junk$nm == "B"] <- "b"
+```
+
 
 ### Print unica linha
 ```{r}
