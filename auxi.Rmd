@@ -42,6 +42,13 @@ $$
 <!--   tufte::tufte_handout: -->
 <!--     latex_engine: xelatex -->
 
+## Autores multiplos (multiple authors)
+<!-- author:  -->
+<!-- - "Guilherme Navarro - Nº USP: 8943160" -->
+<!-- - "José Paulo Silva Cavalcante - Nº USP: 10297373" -->
+<!-- - "Larissa Liete de Miranda - Nº USP: 10297518" -->
+<!-- - "Yugo Oyama - Nº USP: 9297784"  -->
+
 # General R stuff
 ## R Tricks
 ### Descarregar bibliotecas (unload all packeges)
@@ -63,6 +70,22 @@ for(i in 1:8){
 }
 CLDQ_D2 <- c("SA", "FA", "SS", "AT", "FE", "PR")
 ```
+
+### Usando diferentes variáveis (com pequenas mudanças de nome) em loop - exemplo 2
+```{r}
+col_box <- c("idade","n_doencas_associadas","escolaridade","ave_meses") # colunas que serao feitos boxplots
+
+par(mfrow=c(2,3))
+
+for (i in col_box) {
+  j <- eval(parse(text = paste0("bd$",i))) # coluna i
+  adjbox(split(j,bd$grupo), col=cores, main = paste0(i," por grupo"))
+  adjbox(j, col=cores, main = paste0(i," geral"))
+  plot(density(na.omit(j)), main = paste0(i," geral"))
+}
+
+```
+
 
 ### classificando o dado de acordo com casos (classifying according to cases)
 ```{r}
@@ -176,9 +199,14 @@ length(table(dados1$record_id))
 gsub("\n", " ", db)
 ```
 
-### Substituir valor em dataframe (Replace value in dataframe)
+### Substituir valor em dataframe (Replace value in entire dataframe)
 ```{r}
 junk$nm[junk$nm == "B"] <- "b"
+```
+
+### Substituir valor em dataframe (Replace value in single dataframe column)
+```{r}
+df["Column Name"][df["Column Name"] == "Old Value"] <- "New Value"
 ```
 
 
@@ -284,6 +312,11 @@ adjbox(split(TSim,Grup), col=cores, main = "TSim")
 par(mfrow=c(2,2))
 plot(vvento,cpue,pch = 15, main = "Gráfico de dispersão entre vvento e cpue")
 lines(smooth.spline(vvento, cpue, df = 3), col = "blue")
+```
+
+### Grafico de dispersao ggplot2
+```{r}
+ggplot(bd,aes(x= idade,y=tr_media_com_distrator,color=grupo))+geom_point()+ggtitle("")
 ```
 
 
