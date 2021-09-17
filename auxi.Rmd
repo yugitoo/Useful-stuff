@@ -209,6 +209,11 @@ junk$nm[junk$nm == "B"] <- "b"
 df["Column Name"][df["Column Name"] == "Old Value"] <- "New Value"
 ```
 
+### Substituir valor em dataframe (Replace value in single dataframe column)
+```{r}
+plyr::mapvalues(bd$grupo,  from = c("1", "2", "3"), to = c("ave_dirige", "ave_nao_dirige", "controle"))
+```
+
 
 ### Print unica linha
 ```{r}
@@ -1354,6 +1359,14 @@ z
 ```
 
 # Ajustes regressao
+### Modelos com potencias de coeficiente
+```{r}
+#Ajuste3
+
+npeso <- sistolica$peso/100
+ajuste3 <- lm(pressao ~ npeso + I(npeso^2), subset = -8) #excluindo obs #8
+```
+
 ### Efeito aleatório
 ```{r}
 library(lme4)
