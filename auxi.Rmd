@@ -1359,14 +1359,6 @@ z
 ```
 
 # Ajustes regressao
-### Modelos com potencias de coeficiente
-```{r}
-#Ajuste3
-
-npeso <- sistolica$peso/100
-ajuste3 <- lm(pressao ~ npeso + I(npeso^2), subset = -8) #excluindo obs #8
-```
-
 ### Efeito aleatório
 ```{r}
 library(lme4)
@@ -1410,6 +1402,13 @@ E_V  <- round((MS_bh + (r-1) * MS_res)/((r+1) * MS_res),4)
 cat(sprintf("Eficiência de HV é %s \n", E_HV))
 cat(sprintf("Eficiência de H é %s \n", E_H))
 cat(sprintf("Eficiência de V é %s \n", E_V))
+```
+
+### Coeficientes elevados a potencia
+```{r}
+# modelo ajustado 2
+fit2 <- lm(Price~Condo+Size+Rooms+Toilets+Suites+Parking+Furnished+I(Rooms^2)+I(Suites^2)+I(Suites^3),data=aluguel)
+
 ```
 
 
