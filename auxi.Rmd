@@ -236,6 +236,12 @@ write.xlsx(list_of_datasets, file = "Scores_Consolidadas.xlsx")
 ifelse(db$sbp0 < median(db$sbp0), "menores","maiores")
 ```
 
+### sort data.frame according to row.names (ordernar data.frame de acordo com o nome da linha)
+```{r}
+out$groups <- out$groups %>% arrange(factor(row.names(out$groups),levels = c("Controle","AVE dirige", "AVE não dirige"))) # para ordernar a ordem em que os grupos aparecem no grafico
+```
+
+
 ## graficos
 
 ### Correlação
