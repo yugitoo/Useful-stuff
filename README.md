@@ -26,7 +26,7 @@ If you wanna contribute, do not hesitate in contacting me.
 yugitoo
 
 
-# Useful-stuff - english version
+# Useful-stuff - Versão em português
 
 ## Sobre
 Esse projeto consiste em truques úteis de R e de uma mistura de diversos conceitos estatísticos em um único lugar.
