@@ -1359,7 +1359,7 @@ round(se,2)
 ```
 
 ```{r}
-# Estatisctica z
+# Estatistica z
 z <- (p_chapeu-pi)/se
 z
 ```
@@ -1375,6 +1375,22 @@ a2
 summary(fit2)
 coef(fit2) #(mi_j) = coef(fit2)
 
+```
+
+### Erro absoluto médio (mean absolute error)
+
+```{r}
+(lasso_erro_dentro <- mean(y_lasso_dentro - treino_sf$Y[ids]))
+
+# (lasso_erro_fora <- mean((y_lasso_fora - y_treino[-ids])))
+```
+
+### Erro quadratico médio (mean squared error)
+
+```{r}
+(lasso_erro_dentro <- mean((y_lasso_dentro - treino_sf$Y[ids])^2))
+
+# (lasso_erro_fora <- mean((y_lasso_fora - y_treino[-ids])^2))
 ```
 
 
