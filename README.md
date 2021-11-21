@@ -4,6 +4,7 @@
 This project is about collecting useful R tricks and a bunch of statistical related stuff in a single place.
 
 Currently this project contains stuff related to:
+- latex and rmarkdown stuff
 - r tricks
 - database management
 - plotting graphs
@@ -32,6 +33,7 @@ yugitoo
 Esse projeto consiste em truques úteis de R e de uma mistura de diversos conceitos estatísticos em um único lugar.
 
 Atualmente conta com conteúdos relacionados, mas não limitados a:
+- coisas de latex e rmarkdown
 - truques de r
 - manipulação de banco de dados
 - plotar gráficos
