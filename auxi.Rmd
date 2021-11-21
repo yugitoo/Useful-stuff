@@ -49,6 +49,17 @@ $$
 <!-- - "Larissa Liete de Miranda - Nº USP: 10297518" -->
 <!-- - "Yugo Oyama - Nº USP: 9297784"  -->
 
+## Mostrar codigos ao final do pdf (show code at pdf end)
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE} 
+
+```
+
+## Omitir codigos por padrao (hide code as default)
+
+<!-- ```{r setup, include=FALSE} -->
+<!-- knitr::opts_chunk$set(echo = FALSE) -->
+<!-- ``` -->
+
 # General R stuff
 ## R Tricks
 ### Descarregar bibliotecas (unload all packeges)
@@ -220,7 +231,7 @@ plyr::mapvalues(bd$grupo,  from = c("1", "2", "3"), to = c("ave_dirige", "ave_na
 cat(sprintf("Influenciado (A_n) é %s \n", A_n))
 ```
 
-### Acrescimo obs
+### Acrescimo observacao, linha (add row)
 ```{r acrescimo-obs}
 dados.extra <- rbind(dados,c(90,90,1)) #acrescimo de 1 observação
 ```
